@@ -3,6 +3,7 @@ from __future__ import annotations
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi.responses import Response
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
@@ -124,17 +125,19 @@ def update_note(note_id: int, payload: NoteUpdate, db: Session = Depends(get_db)
 @router.delete(
     "/{note_id}",
     status_code=status.HTTP_204_NO_CONTENT,
+    response_class=Response,
     summary="Delete note",
     description="Delete a note by ID.",
     operation_id="delete_note",
 )
-def delete_note(note_id: int, db: Session = Depends(get_db)) -> None:
+def delete_note(note_id: int, db: Session = Depends(get_db)) -> Response:
     note = db.get(Note, note_id)
     if not note:
         raise HTTPException(status_code=404, detail="Note not found.")
     db.delete(note)
     db.commit()
-    return None
+    # Explicit empty 204 response to satisfy FastAPI's "no response body for 204" constraint.
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 @router.post(
